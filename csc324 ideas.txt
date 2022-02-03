@@ -1,0 +1,13 @@
+1. Covid data, has daily cases in each country divided by covid variant
+
+2. Will investigate covid cases of each variant across the world and potentially time
+
+3. Put on map of world/US states/regions of world (if world, 195 countries would likely be too much data to visualize simultaneously, may do by continent or some other form of region)
+
+Put a bubble on each country which relates to how many covid cases it has, may consider data per capita
+
+Make the bubbles change size over time depending on the number of covid cases (potentially a 7 day rolling average)
+
+Color the bubbles based on either variant of covid or recoveries and deaths
+
+4. Understanding trends across the world would be useful for directing research and working to prevent future pandemics
