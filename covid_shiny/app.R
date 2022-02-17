@@ -23,7 +23,7 @@ ui <- fluidPage(
       sliderInput("DatesMerge",
                   "Dates:",
                   min = as.Date("2020-02-22","%Y-%m-%d"),
-                  max = as.Date("2022-1-31","%Y-%m-%d"),
+                  max = as.Date("2022-01-31","%Y-%m-%d"),
                   value=as.Date("2020-02-22"),
                   timeFormat="%Y-%m-%d")
     ),
@@ -76,6 +76,14 @@ server <- function(input, output, session) {
                                 ifelse(location=="Europe", 25.2,
                                        ifelse(location=="Asia", 100.6,
                                               ifelse(location=="Oceania", 140.0, -55.5))))))
+    #reading date
+    day <- input$DatesMerge
+    day_formatted <- strtest <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+    covid_on_day <- filter(covid_data, date==day_formatted)
+    
+    #desired_day <- as.character(input$DatesMerge)
+    #str_replace_all(desired_day, "-", "\")
+    #covid_on_day <- filter(covid_data, date==DatesMerge")
     
     #world map
     world <- map_data("world")
@@ -85,7 +93,7 @@ server <- function(input, output, session) {
         aes(long, lat, map_id = region)
       ) + 
       geom_point(
-        data = covid_data,
+        data = covid_on_day,
         aes(long, lat,
             color = location,
             size = new_cases_per_million),
