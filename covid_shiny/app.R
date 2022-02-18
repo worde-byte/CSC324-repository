@@ -12,6 +12,7 @@ library(tidyverse)
 library(readxl)
 library(dplyr)
 library(ggplot2)
+library(lubridate)
 
 
 
@@ -55,6 +56,8 @@ server <- function(input, output, session) {
     # covid_data <-
     #   covid_data %>%
     #   filter(is.na(continent))
+    
+    covid_data_by_country <- covid_data
     
     covid_data <- filter(covid_data, location=="Africa" | location == "Europe" | location == "Asia" 
                          | location == "Oceania" | location == "South America" | 
