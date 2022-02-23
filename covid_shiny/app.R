@@ -36,12 +36,35 @@ ui <- fluidPage(
     mainPanel("main panel",
               fluidRow(
                 splitLayout(cellWidths = c("50%","50%"),
-                            plotOutput("plot"),
+                            plotOutput("plot",
+                                       click = "plot1_click",
+                                       brush = brushOpts(
+                                         id = "plot1_brush")),
                             plotOutput("hist"))
+              ),
+              fluidRow(
+                column(width = 12,
+                       h4("Points near click"),
+                       verbatimTextOutput("click_info")
+                )
+              ),
+              fluidRow(
+                column(width = 6,
+                       plotOutput("plot_react", height = 300,
+                                  click = "plot_react_click")
+                       ),
+                fluidRow(
+                  column(width = 12,
+                         h4("Points near click"),
+                         verbatimTextOutput("click_info_react")
+                  )
+                )
               )
-    )
+    ),
   )
 )
+
+#add smooth plot for selected country?
 
 server <- function(input, output, session) {
   #reading data
@@ -83,6 +106,7 @@ server <- function(input, output, session) {
                                      ifelse(location=="Asia", 100.6,
                                             ifelse(location=="Oceania", 140.0, -55.5))))))
   
+  ranges2 <- reactiveValues(x=NULL, y = NULL)
   
   output$plot <- renderPlot({
     
@@ -108,6 +132,65 @@ server <- function(input, output, session) {
       guides(color = "none") +
       scale_size_area()
     
+  })
+  
+  output$plot_react <- renderPlot({
+    
+    #reading date
+    day <- input$DatesMerge
+    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+    covid_on_day <- filter(covid_data_by_country, date==day_formatted)
+    
+    #world map
+    world <- map_data("world")
+    g <- ggplot()
+    g + geom_map(
+      data = world, map = world,
+      aes(long, lat, map_id = region)
+    ) + 
+      geom_point(
+        data = covid_on_day,
+        aes(long, lat,
+            color = location,
+            size = new_cases_per_million),
+        #alpha = .7
+      ) +
+      guides(color = "none") +
+      coord_cartesian(xlim=ranges2$x, ylim = ranges2$y, expand = FALSE) +
+      scale_size_area()
+    
+  })
+  
+  output$click_info <- renderPrint({
+    # Because it's a ggplot2, we don't need to supply xvar or yvar; if this
+    # were a base graphics plot, we'd need those.
+    day <- input$DatesMerge
+    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+    covid_on_day_click <- filter(covid_data_by_country, date==day_formatted)
+    covid_on_day_click <- select(covid_on_day_click, c(2, 4, 5, 8, 9, 12, 14, 15))
+    nearPoints(covid_on_day_click, input$plot1_click, addDist = FALSE)
+  })
+  
+  output$click_info_react <- renderPrint({
+    # Because it's a ggplot2, we don't need to supply xvar or yvar; if this
+    # were a base graphics plot, we'd need those.
+    day <- input$DatesMerge
+    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+    covid_on_day_click <- filter(covid_data_by_country, date==day_formatted)
+    covid_on_day_click <- select(covid_on_day_click, c(2, 4, 5, 8, 9, 12, 14, 15))
+    nearPoints(covid_on_day_click, input$plot_react_click, addDist = FALSE)
+  })
+  
+  observe({
+    brush <- input$plot1_brush
+    if (!is.null(brush)) {
+      ranges2$x <- c(brush$xmin, brush$xmax)
+      ranges2$y <- c(brush$ymin, brush$ymax)
+    }
+    else {
+      ranges2$x <- NULL
+      ranges2$y <-NULL
+    }
   })
   
   output$hist = renderPlot({
