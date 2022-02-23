@@ -13,12 +13,15 @@ library(readxl)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
-
+library(shinydashboard)
+library(shinythemes)
 
 
 
 ui <- fluidPage(
+  theme = shinytheme("united"),
   titlePanel("Covid cases in Shiny using ggplot2"),
+  #slider for date to display on world map
   sidebarLayout(
     sidebarPanel(
       sliderInput("DatesMerge",
@@ -29,79 +32,94 @@ ui <- fluidPage(
                   timeFormat="%Y-%m-%d")
     ),
     
-    # Show a plot of the generated distribution
-    
-    mainPanel(
-      tabsetPanel(
-        tabPanel("Covid cases",plotOutput("plot")),
-      )
+    # Show a plot of the covid cases in the world
+    mainPanel("main panel",
+              fluidRow(
+                splitLayout(cellWidths = c("50%","50%"),
+                            plotOutput("plot"),
+                            plotOutput("hist"))
+              )
     )
   )
 )
 
 server <- function(input, output, session) {
+  #reading data
+  covid_data = read.csv("covid-data-2.csv", header = TRUE, sep = ",")
+  
+  #filtering for columns I want
+  covid_data <- select(covid_data, iso_code:new_cases_per_million)
+  
+  #for data by country
+  covid_data_by_country <- covid_data
+  
+  colnames(lat_long) <- c('code', 'lat', 'long', 'location')
+  
+  covid_data_by_country <- merge(covid_data_by_country, lat_long, by='location', all=TRUE)
+  
+  covid_data_by_country <- filter(covid_data_by_country, !is.na(lat))
+  
+  covid_data_by_country <- filter(covid_data_by_country, new_cases_per_million > 0)
+  
+  #filtering to get data by continent
+  covid_data <- filter(covid_data, location=="Africa" | location == "Europe" | location == "Asia" 
+                       | location == "Oceania" | location == "South America" | 
+                         location == "North America")
+  
+  #generating latitude and longitude for continents
+  covid_data <-
+    covid_data %>%
+    mutate(lat=ifelse(location=="Africa", 5.7,
+                      ifelse(location=="North America", 47.1,
+                             ifelse(location=="Europe", 54.5,
+                                    ifelse(location=="Asia", 34.0,
+                                           ifelse(location=="Oceania", -22.7, -8.7))))))
+  
+  covid_data <-
+    covid_data %>%
+    mutate(long=ifelse(location=="Africa", 26.17,
+                       ifelse(location=="North America", -101.3,
+                              ifelse(location=="Europe", 25.2,
+                                     ifelse(location=="Asia", 100.6,
+                                            ifelse(location=="Oceania", 140.0, -55.5))))))
+  
+  
   output$plot <- renderPlot({
     
-    DatesMerge<-input$DatesMerge
-    
-    #reading data
-    covid_data = read.csv("covid-data-2.csv", header = TRUE, sep = ",")
-    #View(covid_data_2_csv)
-    
-    
-    #filtering by columns I want
-    covid_data <- select(covid_data, iso_code:new_cases_per_million)
-    
-    #removes all the specific countries leaving just the aggregates over the continent
-    # covid_data <-
-    #   covid_data %>%
-    #   filter(is.na(continent))
-    
-    covid_data_by_country <- covid_data
-    
-    covid_data <- filter(covid_data, location=="Africa" | location == "Europe" | location == "Asia" 
-                         | location == "Oceania" | location == "South America" | 
-                           location == "North America")
-    
-    #generating latitude and longitude
-    covid_data <-
-      covid_data %>%
-      mutate(lat=ifelse(location=="Africa", 5.7,
-                        ifelse(location=="North America", 47.1,
-                               ifelse(location=="Europe", 54.5,
-                                      ifelse(location=="Asia", 34.0,
-                                             ifelse(location=="Oceania", -22.7, -8.7))))))
-    
-    covid_data <-
-      covid_data %>%
-      mutate(long=ifelse(location=="Africa", 26.17,
-                         ifelse(location=="North America", -101.3,
-                                ifelse(location=="Europe", 25.2,
-                                       ifelse(location=="Asia", 100.6,
-                                              ifelse(location=="Oceania", 140.0, -55.5))))))
     #reading date
     day <- input$DatesMerge
-    day_formatted <- strtest <- str_glue("{month(day)}/{day(day)}/{year(day)}")
-    covid_on_day <- filter(covid_data, date==day_formatted)
-    
-    #desired_day <- as.character(input$DatesMerge)
-    #str_replace_all(desired_day, "-", "\")
-    #covid_on_day <- filter(covid_data, date==DatesMerge")
+    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+    covid_on_day <- filter(covid_data_by_country, date==day_formatted)
     
     #world map
     world <- map_data("world")
     g <- ggplot()
     g + geom_map(
-        data = world, map = world,
-        aes(long, lat, map_id = region)
-      ) + 
+      data = world, map = world,
+      aes(long, lat, map_id = region)
+    ) + 
       geom_point(
         data = covid_on_day,
         aes(long, lat,
             color = location,
             size = new_cases_per_million),
-        alpha = .7
-      )
+        #alpha = .7
+      ) +
+      guides(color = "none") +
+      scale_size_area()
+    
+  })
+  
+  output$hist = renderPlot({
+    
+    #reading date
+    day <- input$DatesMerge
+    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+    covid_on_day <- filter(covid_data, date==day_formatted)
+    
+    g <- ggplot(data=covid_on_day, aes(location, new_cases_per_million))
+    g +
+      geom_bar(stat="identity")
     
   })
   
