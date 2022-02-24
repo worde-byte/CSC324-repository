@@ -33,31 +33,32 @@ ui <- fluidPage(
     ),
     
     # Show a plot of the covid cases in the world
-    mainPanel("main panel",
+    mainPanel("Covid Map",
               fluidRow(
                 splitLayout(cellWidths = c("50%","50%"),
                             plotOutput("plot",
                                        click = "plot1_click",
                                        brush = brushOpts(
                                          id = "plot1_brush")),
-                            plotOutput("hist"))
+                            plotOutput("plot_react",
+                                       click = "plot_react_click"))
               ),
+              #code for large unzoomable map click
+              # fluidRow(
+              #   column(width = 12,
+              #          h4("Points near click"),
+              #          verbatimTextOutput("click_info")
+              #   )
+              # ),
               fluidRow(
                 column(width = 12,
                        h4("Points near click"),
-                       verbatimTextOutput("click_info")
+                       verbatimTextOutput("click_info_react")
                 )
               ),
               fluidRow(
                 column(width = 6,
-                       plotOutput("plot_react", height = 300,
-                                  click = "plot_react_click")
-                       ),
-                fluidRow(
-                  column(width = 12,
-                         h4("Points near click"),
-                         verbatimTextOutput("click_info_react")
-                  )
+                       plotOutput("hist", height = 300)
                 )
               )
     ),

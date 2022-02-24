@@ -17,15 +17,17 @@ covid_data_by_country <- covid_data
 covid_data_by_country <- select(covid_data_by_country, iso_code:new_cases_per_million)
 
 #getting lat and long
-covid_data_by_country <-
-  covid_data_by_country %>%
-  mutate(lat=if(lat_long$country==location){latitude})
+# covid_data_by_country <-
+#   covid_data_by_country %>%
+#   mutate(lat=if(lat_long$country==location){latitude})
 
 colnames(lat_long) <- c('code', 'lat', 'long', 'location')
 
 covid_data_by_country <- merge(covid_data_by_country, lat_long, by='location', all=TRUE)
 
 covid_data_by_country <- filter(covid_data_by_country, !is.na(lat))
+
+covid_data_by_country <- filter(covid_data_by_country, new_cases_per_million > 0)
 
 g <- ggplot() +
   geom_map(
@@ -37,14 +39,23 @@ g <- ggplot() +
     aes(long, lat,
         size = new_cases_per_million),
     alpha = .7
-  )
+  ) +
+  scale_size_area()
 
 g
 
 ##END BY COUNTRY
 
+
 #filtering by columns I want
 covid_data <- select(covid_data, iso_code:new_cases_per_million)
+
+#creating a scattermatrix:
+# Plot
+#showing cases and deaths by continent
+# matrix_data <- filter(covid_data, location=="World")
+# matrix_data <- matrix_data[,c(3,5,6,8,9)]
+# pairs(matrix_data[,2:5], pch = 19)
 
 
 
@@ -101,8 +112,37 @@ g <- ggplot() +
 
 g
 
+day <- as.Date("2021-05-22")
+#test <- strftime(as.Date(day, format="%d/%m/%Y"), format="%m/%d/%Y")
+strtest <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+# strtest <- as.character(test)
 
+covid_by_day <- filter(covid_data, date == strtest)
 
+p <- ggplot(data=covid_by_day, aes(location, new_cases_per_million)) +
+  geom_bar(stat="identity")
+
+p
+
+#messing around with color
+# d=data.frame(c=colors(), y=seq(0, length(colors())-1)%%66, x=seq(0, length(colors())-1)%/%66)
+# ggplot() +
+#   scale_x_continuous(name="", breaks=NULL, expand=c(0, 0)) +
+#   scale_y_continuous(name="", breaks=NULL, expand=c(0, 0)) +
+#   scale_fill_identity() +
+#   geom_rect(data=d, mapping=aes(xmin=x, xmax=x+1, ymin=y, ymax=y+1), fill="white") +
+#   geom_rect(data=d, mapping=aes(xmin=x+0.05, xmax=x+0.95, ymin=y+0.5, ymax=y+1, fill=c)) +
+#   geom_text(data=d, mapping=aes(x=x+0.5, y=y+0.5, label=c), colour="black", hjust=0.5, vjust=1, size=3)
+# 
+# 
+# d=expand.grid(h=seq(0,0.95,0.05), s=seq(0,0.95,0.05), v=seq(0,1,0.2))
+# ggplot() +
+#   coord_polar(theta="x") +
+#   facet_wrap(~v) +
+#   scale_x_continuous(name="hue", limits=c(0,1), breaks=seq(0.025,0.925,0.1), labels=seq(0,0.9,0.1)) +
+#   scale_y_continuous(name="saturation", breaks=seq(0, 1, 0.2)) +
+#   scale_fill_identity() +
+#   geom_rect(data=d, mapping=aes(xmin=h, xmax=h+resolution(h), ymin=s, ymax=s+resolution(s), fill=hsv(h,s,v)), color="white", size=0.1)
 
 #shows all cases on 2020/08/31
 # covid_data_his <-
