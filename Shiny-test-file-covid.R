@@ -3,14 +3,25 @@ library(readxl)
 library(dplyr)
 library(ggplot2)
 library(lubridate)
-#reading data
-#covid_data_2_csv <- read_excel("C:/Users/16032/OneDrive - Grinnell College/Desktop/Year 3 Sem 2/CSC324/data/covid-data-2.csv.xlsx")
-#View(covid_data_2_csv)
-covid_data = read.csv("covid-data-2.csv", header = TRUE, sep = ",")
-#View(covid_data_2_csv)
+library(RCurl)
+library(curl)
+
+library(httr)
+dataset <- httr::GET("https://www.kaggle.com/api/v1/competitions/data/download/10445/train.csv", 
+                     httr::authenticate(username, authkey, type = "basic"))
+
+temp <- tempfile()
+download.file(dataset$url,temp)
+data <- read.csv(unz(temp, "train.csv"))
+unlink(temp)
+
+
+Data<-read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv", header = TRUE, sep = ",")
 
 
 ##BY COUNTRY
+#covid_data = read.csv("covid-data-2.csv", header = TRUE, sep = ",")
+covid_data<-Data
 covid_data_by_country <- covid_data
 #View(lat_long)
 

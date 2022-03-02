@@ -15,6 +15,53 @@ library(ggplot2)
 library(lubridate)
 library(shinydashboard)
 library(shinythemes)
+library(RCurl)
+library(curl)
+library(maps)
+
+
+#reading data
+Data_hub <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv", header = TRUE, sep = ",")
+
+covid_data <- Data_hub
+
+lat_long = read.csv("lat-long.csv", header = TRUE, sep = ",")
+
+#filtering for columns I want
+covid_data <- select(covid_data, iso_code:new_cases_per_million)
+
+#for data by country
+covid_data_by_country <- covid_data
+
+colnames(lat_long) <- c('code', 'lat', 'long', 'location')
+
+covid_data_by_country <- merge(covid_data_by_country, lat_long, by='location', all=TRUE)
+
+covid_data_by_country <- filter(covid_data_by_country, !is.na(lat))
+
+covid_data_by_country <- filter(covid_data_by_country, new_cases_per_million > 0)
+
+#filtering to get data by continent
+covid_data <- filter(covid_data, location=="Africa" | location == "Europe" | location == "Asia" 
+                     | location == "Oceania" | location == "South America" | 
+                       location == "North America")
+
+#generating latitude and longitude for continents (for cont map, legacy)
+covid_data <-
+  covid_data %>%
+  mutate(lat=ifelse(location=="Africa", 5.7,
+                    ifelse(location=="North America", 47.1,
+                           ifelse(location=="Europe", 54.5,
+                                  ifelse(location=="Asia", 34.0,
+                                         ifelse(location=="Oceania", -22.7, -8.7))))))
+
+covid_data <-
+  covid_data %>%
+  mutate(long=ifelse(location=="Africa", 26.17,
+                     ifelse(location=="North America", -101.3,
+                            ifelse(location=="Europe", 25.2,
+                                   ifelse(location=="Asia", 100.6,
+                                          ifelse(location=="Oceania", 140.0, -55.5))))))
 
 
 
@@ -27,7 +74,7 @@ ui <- fluidPage(
       sliderInput("DatesMerge",
                   "Dates:",
                   min = as.Date("2020-02-22","%Y-%m-%d"),
-                  max = as.Date("2022-01-31","%Y-%m-%d"),
+                  max = as.Date(Sys.Date(),"%Y-%m-%d"),
                   value=as.Date("2020-02-22"),
                   timeFormat="%Y-%m-%d")
     ),
@@ -68,44 +115,6 @@ ui <- fluidPage(
 #add smooth plot for selected country?
 
 server <- function(input, output, session) {
-  #reading data
-  covid_data = read.csv("covid-data-2.csv", header = TRUE, sep = ",")
-  
-  #filtering for columns I want
-  covid_data <- select(covid_data, iso_code:new_cases_per_million)
-  
-  #for data by country
-  covid_data_by_country <- covid_data
-  
-  colnames(lat_long) <- c('code', 'lat', 'long', 'location')
-  
-  covid_data_by_country <- merge(covid_data_by_country, lat_long, by='location', all=TRUE)
-  
-  covid_data_by_country <- filter(covid_data_by_country, !is.na(lat))
-  
-  covid_data_by_country <- filter(covid_data_by_country, new_cases_per_million > 0)
-  
-  #filtering to get data by continent
-  covid_data <- filter(covid_data, location=="Africa" | location == "Europe" | location == "Asia" 
-                       | location == "Oceania" | location == "South America" | 
-                         location == "North America")
-  
-  #generating latitude and longitude for continents
-  covid_data <-
-    covid_data %>%
-    mutate(lat=ifelse(location=="Africa", 5.7,
-                      ifelse(location=="North America", 47.1,
-                             ifelse(location=="Europe", 54.5,
-                                    ifelse(location=="Asia", 34.0,
-                                           ifelse(location=="Oceania", -22.7, -8.7))))))
-  
-  covid_data <-
-    covid_data %>%
-    mutate(long=ifelse(location=="Africa", 26.17,
-                       ifelse(location=="North America", -101.3,
-                              ifelse(location=="Europe", 25.2,
-                                     ifelse(location=="Asia", 100.6,
-                                            ifelse(location=="Oceania", 140.0, -55.5))))))
   
   ranges2 <- reactiveValues(x=NULL, y = NULL)
   
@@ -113,8 +122,8 @@ server <- function(input, output, session) {
     
     #reading date
     day <- input$DatesMerge
-    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
-    covid_on_day <- filter(covid_data_by_country, date==day_formatted)
+    #day_formatted <- str_glue("{month(day)}-{day(day)}-{year(day)}")
+    covid_on_day <- filter(covid_data_by_country, date==day)
     
     #world map
     world <- map_data("world")
@@ -139,8 +148,8 @@ server <- function(input, output, session) {
     
     #reading date
     day <- input$DatesMerge
-    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
-    covid_on_day <- filter(covid_data_by_country, date==day_formatted)
+    #day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+    covid_on_day <- filter(covid_data_by_country, date==day)
     
     #world map
     world <- map_data("world")
@@ -176,8 +185,8 @@ server <- function(input, output, session) {
     # Because it's a ggplot2, we don't need to supply xvar or yvar; if this
     # were a base graphics plot, we'd need those.
     day <- input$DatesMerge
-    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
-    covid_on_day_click <- filter(covid_data_by_country, date==day_formatted)
+    #day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+    covid_on_day_click <- filter(covid_data_by_country, date==day)
     covid_on_day_click <- select(covid_on_day_click, c(2, 4, 5, 8, 9, 12, 14, 15))
     nearPoints(covid_on_day_click, input$plot_react_click, addDist = FALSE)
   })
@@ -198,8 +207,8 @@ server <- function(input, output, session) {
     
     #reading date
     day <- input$DatesMerge
-    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
-    covid_on_day <- filter(covid_data, date==day_formatted)
+    #day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
+    covid_on_day <- filter(covid_data, date==day)
     
     g <- ggplot(data=covid_on_day, aes(location, new_cases_per_million))
     g +
