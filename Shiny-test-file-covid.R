@@ -135,6 +135,38 @@ p <- ggplot(data=covid_by_day, aes(location, new_cases_per_million)) +
 
 p
 
+#working on govt measurements
+govt_data<-read.csv("government_measures.csv", header = TRUE, sep = ",")
+
+govt_data <-
+  filter(govt_data, DATE_IMPLEMENTED!="")
+
+govt_data <-
+  govt_data %>%
+  mutate(date=as.Date(DATE_IMPLEMENTED, "%m/%d/%Y"))
+
+govt_data <-
+  filter(govt_data, !is.na(DATE_IMPLEMENTED))
+
+govt_data <-
+  govt_data %>%
+  filter(govt_data, ISO=="AFG")
+
+CHN_data <-
+  filter(govt_data, ISO=="CHN")
+
+afg_measures <- ggplot(data=AFG_data, aes(date, CATEGORY, color=MEASURE)) +
+  geom_point(size=2)
+
+chn_measures <- ggplot(data=CHN_data, aes(date, CATEGORY, color=MEASURE)) +
+  geom_point(size=2)
+
+chn_measures +
+  theme(legend.position="top")
+
+govt_data <-
+  rename(govt_data, "iso_code"="ISO")
+
 #messing around with color
 # d=data.frame(c=colors(), y=seq(0, length(colors())-1)%%66, x=seq(0, length(colors())-1)%/%66)
 # ggplot() +

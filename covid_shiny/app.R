@@ -172,8 +172,7 @@ server <- function(input, output, session) {
   })
   
   output$click_info_react <- renderPrint({
-    # Because it's a ggplot2, we don't need to supply xvar or yvar; if this
-    # were a base graphics plot, we'd need those.
+    # Adding clicking on second plot for info on country
     day <- input$DatesMerge
     #day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
     covid_on_day_click <- filter(covid_data_by_country, date==day)
@@ -182,6 +181,7 @@ server <- function(input, output, session) {
   })
   
   observe({
+    #working to make the brush on plot1, read its x and y coords, then change the plot on the right
     brush <- input$plot1_brush
     if (!is.null(brush)) {
       ranges2$x <- c(brush$xmin, brush$xmax)
@@ -194,7 +194,7 @@ server <- function(input, output, session) {
   })
   
   output$hist = renderPlot({
-    
+    #histogram for data by continent
     #reading date
     day <- input$DatesMerge
     #day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
