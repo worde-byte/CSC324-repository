@@ -171,16 +171,6 @@ server <- function(input, output, session) {
     
   })
   
-  output$click_info <- renderPrint({
-    # Because it's a ggplot2, we don't need to supply xvar or yvar; if this
-    # were a base graphics plot, we'd need those.
-    day <- input$DatesMerge
-    day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
-    covid_on_day_click <- filter(covid_data_by_country, date==day_formatted)
-    covid_on_day_click <- select(covid_on_day_click, c(2, 4, 5, 8, 9, 12, 14, 15))
-    nearPoints(covid_on_day_click, input$plot1_click, addDist = FALSE)
-  })
-  
   output$click_info_react <- renderPrint({
     # Because it's a ggplot2, we don't need to supply xvar or yvar; if this
     # were a base graphics plot, we'd need those.

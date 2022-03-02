@@ -5,9 +5,9 @@ account: mfgf6d-worde0byte
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5728397
-bundleId: 5615324
+bundleId: 5633253
 url: https://mfgf6d-worde0byte.shinyapps.io/covid_shiny/
-when: 1645743227.72232
-lastSyncTime: 1645743227.72232
+when: 1646235079.64798
+lastSyncTime: 1646235079.64798
 asMultiple: FALSE
 asStatic: FALSE
