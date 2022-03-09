@@ -130,6 +130,7 @@ p <- ggplot(data=covid_by_day, aes(location, new_cases_per_million)) +
 p
 
 #working on govt measurements
+#setwd('C:\\Users\\16032\\OneDrive - Grinnell College\\Desktop\\Year 3 Sem 2\\CSC324\\CSC324-repository\\covid_shiny')
 govt_data<-read.csv("government_measures.csv", header = TRUE, sep = ",")
 
 govt_data <-
@@ -143,8 +144,7 @@ govt_data <-
   filter(govt_data, !is.na(DATE_IMPLEMENTED))
 
 govt_data <-
-  govt_data %>%
-  filter(govt_data, LOG_TYPE!="Phase-out measure")
+  filter(govt_data, LOG_TYPE == "Introduction / extension of measures")
 
 AFG_data <-
   filter(govt_data, ISO=="AFG")
@@ -155,6 +155,8 @@ CHN_data <-
 afg_measures <- ggplot(data=AFG_data, aes(date, CATEGORY, color=MEASURE)) +
   geom_point(size=2)
 
+afg_measures
+
 chn_measures <- ggplot(data=CHN_data, aes(date, CATEGORY, color=MEASURE)) +
   geom_point(size=2)
 
@@ -164,8 +166,18 @@ chn_measures +
 govt_data <-
   rename(govt_data, "iso_code"="ISO")
 
-iso_react <- "AFG"
+iso_react <- "GBR"
 govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
+
+govt_data_lockdown <- filter(govt_data, CATEGORY=="Lockdown" & ISO==iso_react)
+
+g <-
+  ggplot(govt_data_2, aes(x=date, y=total_deaths, group=1)) +
+  geom_line()
+plot(g) +
+  for (obs in govt_data_lockdown){
+  abline(v=obs[13], col = "blue")
+}
 
 g <-
   ggplot(govt_data_2, aes(x=date, y=total_cases, group=1)) +

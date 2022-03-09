@@ -106,7 +106,13 @@ ui <- fluidPage(
               fluidRow(
                 plotOutput("hist", height = 300)
                 ),
-              fluidRow(plotOutput("plot_country"))
+              fluidRow(
+                splitLayout(cellWidths = c("50%","50%"),
+                            plotOutput("plot_country_cases"),
+                            plotOutput("plot_country_deaths"))
+              ),
+              fluidRow(
+                plotOutput("plot_country", height = 300))
     ),
   )
 )
@@ -179,21 +185,42 @@ server <- function(input, output, session) {
     nearPoints(covid_on_day_click, input$plot_react_click, maxpoints = 1, addDist = FALSE)
   })
   
-  
-  output$plot_country <- renderPrint({
-    #Source of problems.
+  output$plot_country_cases <- renderPlot({
+    #plot of total cases over time
     nearCountry <- nearPoints(covid_data_by_country, input$plot_react_click, maxpoints = 1, addDist = FALSE)
     iso_react <- as.character(nearCountry$iso_code)
+    
 
-    govt_data_2 <- filter(covid_data_by_country, iso_code=="AFG")
+
+    govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
+    
     g <-
       ggplot(govt_data_2, aes(x=date, y=total_cases, group=1)) +
-      geom_line()
+      geom_line() +
+      labs(x = "Date")
     g
     
   })
   
-  
+  output$plot_country_deaths <- renderPlot({
+    #plot of total cases over time
+    nearCountry <- nearPoints(covid_data_by_country, input$plot_react_click, maxpoints = 1, addDist = FALSE)
+    iso_react <- as.character(nearCountry$iso_code)
+    
+    if(typeof(iso_react)!="character"){
+      iso_react <-"USA"
+    }
+      
+    
+    govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
+    
+    g <-
+      ggplot(govt_data_2, aes(x=date)) +
+      geom_line(aes(y=total_deaths, group=1)) +
+      labs(x = "Date")
+    g
+    
+  })
   
   observe({
     #working to make the brush on plot1, read its x and y coords, then change the plot on the right
