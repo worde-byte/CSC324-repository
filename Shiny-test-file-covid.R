@@ -6,18 +6,12 @@ library(lubridate)
 library(RCurl)
 library(curl)
 
-library(httr)
-dataset <- httr::GET("https://www.kaggle.com/api/v1/competitions/data/download/10445/train.csv", 
-                     httr::authenticate(username, authkey, type = "basic"))
-
-temp <- tempfile()
-download.file(dataset$url,temp)
-data <- read.csv(unz(temp, "train.csv"))
-unlink(temp)
 
 
 Data<-read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv", header = TRUE, sep = ",")
 
+
+# y <- list("Africa", 'Asia', 'Australia', 'Europe', 'North America', 'South America')
 
 ##BY COUNTRY
 #covid_data = read.csv("covid-data-2.csv", header = TRUE, sep = ",")
@@ -150,6 +144,9 @@ govt_data <-
 
 govt_data <-
   govt_data %>%
+  filter(govt_data, LOG_TYPE!="Phase-out measure")
+
+AFG_data <-
   filter(govt_data, ISO=="AFG")
 
 CHN_data <-
@@ -166,6 +163,16 @@ chn_measures +
 
 govt_data <-
   rename(govt_data, "iso_code"="ISO")
+
+iso_react <- "AFG"
+govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
+
+g <-
+  ggplot(govt_data_2, aes(x=date, y=total_cases, group=1)) +
+  geom_line()
+g
+
+
 
 #messing around with color
 # d=data.frame(c=colors(), y=seq(0, length(colors())-1)%%66, x=seq(0, length(colors())-1)%/%66)

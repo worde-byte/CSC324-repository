@@ -104,10 +104,9 @@ ui <- fluidPage(
                 )
               ),
               fluidRow(
-                column(width = 6,
-                       plotOutput("hist", height = 300)
-                )
-              )
+                plotOutput("hist", height = 300)
+                ),
+              fluidRow(plotOutput("plot_country"))
     ),
   )
 )
@@ -177,8 +176,24 @@ server <- function(input, output, session) {
     #day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
     covid_on_day_click <- filter(covid_data_by_country, date==day)
     covid_on_day_click <- select(covid_on_day_click, c(2, 4, 5, 8, 9, 12, 14, 15))
-    nearPoints(covid_on_day_click, input$plot_react_click, addDist = FALSE)
+    nearPoints(covid_on_day_click, input$plot_react_click, maxpoints = 1, addDist = FALSE)
   })
+  
+  
+  output$plot_country <- renderPrint({
+    #Source of problems.
+    nearCountry <- nearPoints(covid_data_by_country, input$plot_react_click, maxpoints = 1, addDist = FALSE)
+    iso_react <- as.character(nearCountry$iso_code)
+
+    govt_data_2 <- filter(covid_data_by_country, iso_code=="AFG")
+    g <-
+      ggplot(govt_data_2, aes(x=date, y=total_cases, group=1)) +
+      geom_line()
+    g
+    
+  })
+  
+  
   
   observe({
     #working to make the brush on plot1, read its x and y coords, then change the plot on the right
