@@ -19,6 +19,10 @@ covid_data<-Data
 covid_data_by_country <- covid_data
 #View(lat_long)
 
+by_country <- covid_data %>%
+  group_by(location, continent) %>%
+  nest()
+
 covid_data_by_country <- select(covid_data_by_country, iso_code:new_cases_per_million)
 
 #getting lat and long
@@ -130,8 +134,13 @@ p <- ggplot(data=covid_by_day, aes(location, new_cases_per_million)) +
 p
 
 #working on govt measurements
-#setwd('C:\\Users\\16032\\OneDrive - Grinnell College\\Desktop\\Year 3 Sem 2\\CSC324\\CSC324-repository\\covid_shiny')
+setwd('C:\\Users\\16032\\OneDrive - Grinnell College\\Desktop\\Year 3 Sem 2\\CSC324\\CSC324-repository\\covid_shiny')
 govt_data<-read.csv("government_measures.csv", header = TRUE, sep = ",")
+
+
+govt_data$date <- strptime(as.character(govt_data$DATE_IMPLEMENTED), "%m/%d/%Y")
+
+govt_data$date <- format(govt_data$date, "%Y-%m-%d")
 
 govt_data <-
   filter(govt_data, DATE_IMPLEMENTED!="")
@@ -169,15 +178,40 @@ govt_data <-
 iso_react <- "GBR"
 govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
 
-govt_data_lockdown <- filter(govt_data, CATEGORY=="Lockdown" & ISO==iso_react)
+govt_data_lockdown <- filter(govt_data, CATEGORY=="Lockdown" & iso_code==iso_react)
+
 
 g <-
   ggplot(govt_data_2, aes(x=date, y=total_deaths, group=1)) +
   geom_line()
-plot(g) +
-  for (obs in govt_data_lockdown){
-  abline(v=obs[13], col = "blue")
+
+#begin vlines 
+  
+
+list_dates <- list()
+
+for (obs in 1:nrow(govt_data_lockdown)){
+  #print(as.character(govt_data_lockdown[obs,19]))
+  list_dates <- append(list_dates, as.character(govt_data_lockdown[obs,19]))
 }
+
+for (i in 1:length(list_dates)){
+  g <- g + geom_vline(xintercept=toString(list_dates[i]))
+  #print(list_dates[i])
+}
+
+g
+
+#end vlines
+
+g +
+  geom_vline(xintercept="2020-03-24")
+  
+  for (obs in 1:nrow(govt_data_lockdown)){
+    #print(govt_data_lockdown[obs,19])
+  geom_vline(xintercept=as.character(govt_data_lockdown[obs,19]), col = "blue")
+}
+  xlab("date")
 
 g <-
   ggplot(govt_data_2, aes(x=date, y=total_cases, group=1)) +
