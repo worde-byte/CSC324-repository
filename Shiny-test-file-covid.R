@@ -5,6 +5,8 @@ library(ggplot2)
 library(lubridate)
 library(RCurl)
 library(curl)
+library(modelr)
+
 
 
 
@@ -19,9 +21,13 @@ covid_data<-Data
 covid_data_by_country <- covid_data
 #View(lat_long)
 
-by_country <- covid_data %>%
+covid_data_by_country <- select(covid_data_by_country, iso_code:new_cases_per_million)
+
+by_country <- covid_data_by_country %>%
   group_by(location, continent) %>%
   nest()
+
+
 
 covid_data_by_country <- select(covid_data_by_country, iso_code:new_cases_per_million)
 
@@ -154,6 +160,20 @@ govt_data <-
 
 govt_data <-
   filter(govt_data, LOG_TYPE == "Introduction / extension of measures")
+
+by_country <- covid_data_by_country %>%
+  group_by(location, continent) %>%
+  nest()
+
+
+#ERROR
+country_model <- function(df) {
+  lm(total_cases ~ date, data = df)
+}
+
+models <- map(by_country$data, country_model)
+#END ERROR
+
 
 AFG_data <-
   filter(govt_data, ISO=="AFG")
