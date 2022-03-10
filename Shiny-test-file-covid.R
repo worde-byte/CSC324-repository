@@ -233,8 +233,9 @@ g +
 }
   xlab("date")
 
+  #USE as.Date(date) rather than just date
 g <-
-  ggplot(govt_data_2, aes(x=date, y=total_cases, group=1)) +
+  ggplot(govt_data_2, aes(x=as.Date(date), y=total_cases, group=1)) +
   geom_line()
 g
 

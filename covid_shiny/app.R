@@ -7,6 +7,11 @@
 #    http://shiny.rstudio.com/
 #
 
+#SOURCES:
+#https://www.r-graph-gallery.com/279-plotting-time-series-with-ggplot2.html
+
+
+
 library(shiny)
 library(tidyverse)
 library(readxl)
@@ -62,6 +67,30 @@ covid_data <-
                             ifelse(location=="Europe", 25.2,
                                    ifelse(location=="Asia", 100.6,
                                           ifelse(location=="Oceania", 140.0, -55.5))))))
+
+#data about government measures
+govt_data<-read.csv("government_measures.csv", header = TRUE, sep = ",")
+
+#formating govt_data
+govt_data$date <- strptime(as.character(govt_data$DATE_IMPLEMENTED), "%m/%d/%Y")
+
+govt_data$date <- format(govt_data$date, "%Y-%m-%d")
+
+govt_data <-
+  filter(govt_data, DATE_IMPLEMENTED!="")
+
+govt_data <-
+  govt_data %>%
+  mutate(date=as.Date(DATE_IMPLEMENTED, "%m/%d/%Y"))
+
+govt_data <-
+  filter(govt_data, !is.na(DATE_IMPLEMENTED))
+
+govt_data <-
+  filter(govt_data, LOG_TYPE == "Introduction / extension of measures")
+
+govt_data <-
+  rename(govt_data, "iso_code"="ISO")
 
 
 
@@ -207,17 +236,31 @@ server <- function(input, output, session) {
     nearCountry <- nearPoints(covid_data_by_country, input$plot_react_click, maxpoints = 1, addDist = FALSE)
     iso_react <- as.character(nearCountry$iso_code)
     
-    if(typeof(iso_react)!="character"){
-      iso_react <-"USA"
-    }
-      
+    #adding lines for dates of lockdown
+    govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
+    
+    govt_data_lockdown <- filter(govt_data, CATEGORY=="Lockdown" & iso_code==iso_react)
     
     govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
     
     g <-
-      ggplot(govt_data_2, aes(x=date)) +
-      geom_line(aes(y=total_deaths, group=1)) +
-      labs(x = "Date")
+      ggplot(govt_data_2, aes(x=date, y=total_deaths, group=1)) +
+      geom_line()
+    
+    list_dates <- list()
+    
+    for (obs in 1:nrow(govt_data_lockdown)){
+      list_dates <- append(list_dates, as.character(govt_data_lockdown[obs,19]))
+    }
+    
+    for (i in 1:length(list_dates)){
+      g <- g + geom_vline(xintercept=toString(list_dates[i]))
+    }
+    
+    g <- g + 
+      xlab("Date") +
+      ylab("Total Deaths")
+    
     g
     
   })
