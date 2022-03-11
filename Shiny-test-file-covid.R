@@ -195,14 +195,14 @@ chn_measures +
 govt_data <-
   rename(govt_data, "iso_code"="ISO")
 
-iso_react <- "GBR"
+iso_react <- "CHN"
 govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
 
 govt_data_lockdown <- filter(govt_data, CATEGORY=="Lockdown" & iso_code==iso_react)
 
 
 g <-
-  ggplot(govt_data_2, aes(x=date, y=total_deaths, group=1)) +
+  ggplot(govt_data_2, aes(x=as.Date(date), y=total_deaths, group=1)) +
   geom_line()
 
 #begin vlines 
@@ -216,7 +216,7 @@ for (obs in 1:nrow(govt_data_lockdown)){
 }
 
 for (i in 1:length(list_dates)){
-  g <- g + geom_vline(xintercept=toString(list_dates[i]))
+  g <- g + geom_vline(xintercept=as.Date(list_dates[[i]]))
   #print(list_dates[i])
 }
 

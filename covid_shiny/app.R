@@ -9,6 +9,7 @@
 
 #SOURCES:
 #https://www.r-graph-gallery.com/279-plotting-time-series-with-ggplot2.html
+#https://campus.datacamp.com/courses/free-introduction-to-r/chapter-6-lists?ex=6
 
 
 
@@ -87,10 +88,13 @@ govt_data <-
   filter(govt_data, !is.na(DATE_IMPLEMENTED))
 
 govt_data <-
-  filter(govt_data, LOG_TYPE == "Introduction / extension of measures")
+  rename(govt_data, "iso_code"="ISO")
+
+govt_data_phaseout <-
+  filter(govt_data, LOG_TYPE != "Introduction / extension of measures")
 
 govt_data <-
-  rename(govt_data, "iso_code"="ISO")
+  filter(govt_data, LOG_TYPE == "Introduction / extension of measures")
 
 
 
@@ -219,14 +223,31 @@ server <- function(input, output, session) {
     nearCountry <- nearPoints(covid_data_by_country, input$plot_react_click, maxpoints = 1, addDist = FALSE)
     iso_react <- as.character(nearCountry$iso_code)
     
-
-
+    #adding lines for dates of lockdown
+    govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
+    
+    govt_data_lockdown <- filter(govt_data, CATEGORY=="Lockdown" & iso_code==iso_react)
+    
     govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
     
     g <-
-      ggplot(govt_data_2, aes(x=date, y=total_cases, group=1)) +
-      geom_line() +
-      labs(x = "Date")
+      ggplot(govt_data_2, aes(x=as.Date(date), y=total_cases, group=1)) +
+      geom_line()
+    
+    list_dates <- list()
+    
+    for (obs in 1:nrow(govt_data_lockdown)){
+      list_dates <- append(list_dates, as.character(govt_data_lockdown[obs,19]))
+    }
+    
+    for (i in 1:length(list_dates)){
+      g <- g + geom_vline(xintercept=as.Date(list_dates[[i]]), col = 'black')
+    }
+    
+    g <- g + 
+      xlab("Date") +
+      ylab("Total Deaths")
+    
     g
     
   })
@@ -241,10 +262,12 @@ server <- function(input, output, session) {
     
     govt_data_lockdown <- filter(govt_data, CATEGORY=="Lockdown" & iso_code==iso_react)
     
+    govt_data_end_lockdown <- filter(govt_data_phaseout, CATEGORY=="Lockdown" & iso_code==iso_react)
+    
     govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
     
     g <-
-      ggplot(govt_data_2, aes(x=date, y=total_deaths, group=1)) +
+      ggplot(govt_data_2, aes(x=as.Date(date), y=total_deaths, group=1)) +
       geom_line()
     
     list_dates <- list()
@@ -254,7 +277,17 @@ server <- function(input, output, session) {
     }
     
     for (i in 1:length(list_dates)){
-      g <- g + geom_vline(xintercept=toString(list_dates[i]))
+      g <- g + geom_vline(xintercept=as.Date(list_dates[[i]]), col = 'black')
+    }
+    
+    list_dates_end <- list()
+    
+    for (obs in 1:nrow(govt_data_end_lockdown)){
+      list_dates_end <- append(list_dates_end, as.character(govt_data_end_lockdown[obs,19]))
+    }
+    
+    for (i in 1:length(list_dates_end)){
+      g <- g + geom_vline(xintercept=as.Date(list_dates_end[[i]]), col = 'blue')
     }
     
     g <- g + 
