@@ -7,10 +7,17 @@
 #    http://shiny.rstudio.com/
 #
 
-#SOURCES:
+#Online Sources:
 #https://www.r-graph-gallery.com/279-plotting-time-series-with-ggplot2.html
 #https://campus.datacamp.com/courses/free-introduction-to-r/chapter-6-lists?ex=6
-
+#https://mastering-shiny.org/ (lots of help for all of shiny)
+#https://stackoverflow.com/questions/40908808/how-to-sliderinput-for-dates
+#https://www.datanovia.com/en/blog/ggplot-legend-title-position-and-labels/#change-legend-title
+#data from: https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv
+#government measures data from https://github.com/OxCGRT/covid-policy-tracker
+#https://statisticsglobe.com/change-formatting-of-numbers-of-ggplot2-plot-axis-in-r
+#https://www.datanovia.com/en/lessons/rename-data-frame-columns-in-r/
+#https://bookdown.org/dli/rguide/scatterplots-and-best-fit-lines-two-sets.html
 
 
 library(shiny)
@@ -24,9 +31,11 @@ library(shinythemes)
 library(RCurl)
 library(curl)
 library(maps)
+library(scales)
 
 
 #reading data
+#all covid data, until today, for each country
 Data_hub <- read.csv("https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv", header = TRUE, sep = ",")
 
 covid_data <- Data_hub
@@ -52,24 +61,9 @@ covid_data <- filter(covid_data, location=="Africa" | location == "Europe" | loc
                      | location == "Oceania" | location == "South America" | 
                        location == "North America")
 
-#generating latitude and longitude for continents (for cont map, legacy)
-covid_data <-
-  covid_data %>%
-  mutate(lat=ifelse(location=="Africa", 5.7,
-                    ifelse(location=="North America", 47.1,
-                           ifelse(location=="Europe", 54.5,
-                                  ifelse(location=="Asia", 34.0,
-                                         ifelse(location=="Oceania", -22.7, -8.7))))))
-
-covid_data <-
-  covid_data %>%
-  mutate(long=ifelse(location=="Africa", 26.17,
-                     ifelse(location=="North America", -101.3,
-                            ifelse(location=="Europe", 25.2,
-                                   ifelse(location=="Asia", 100.6,
-                                          ifelse(location=="Oceania", 140.0, -55.5))))))
 
 #data about government measures
+#setwd('C:\\Users\\16032\\OneDrive - Grinnell College\\Desktop\\Year 3 Sem 2\\CSC324\\CSC324-repository\\covid_shiny')
 govt_data<-read.csv("government_measures.csv", header = TRUE, sep = ",")
 
 #formating govt_data
@@ -96,7 +90,8 @@ govt_data_phaseout <-
 govt_data <-
   filter(govt_data, LOG_TYPE == "Introduction / extension of measures")
 
-
+#categories of govt measures
+catego <- unique(govt_data$CATEGORY)
 
 ui <- fluidPage(
   theme = shinytheme("united"),
@@ -109,11 +104,12 @@ ui <- fluidPage(
                   min = as.Date("2020-02-22","%Y-%m-%d"),
                   max = as.Date(Sys.Date(),"%Y-%m-%d"),
                   value=as.Date("2020-02-22"),
-                  timeFormat="%Y-%m-%d")
+                  timeFormat="%Y-%m-%d"),
+      selectInput("categ", "Which government measure would you like to be visualized?", catego)
     ),
     
     # Show a plot of the covid cases in the world
-    mainPanel("Covid Map",
+    mainPanel("World Covid Map",
               fluidRow(
                 splitLayout(cellWidths = c("50%","50%"),
                             plotOutput("plot",
@@ -178,7 +174,10 @@ server <- function(input, output, session) {
         #alpha = .7
       ) +
       guides(color = "none") +
-      scale_size_area()
+      scale_size_area() +
+      xlab("Latitude") +
+      ylab("Longitude") +
+      labs(title = "New Covid Cases per Million in World", size = "New Cases per Million")
     
   })
   
@@ -205,7 +204,10 @@ server <- function(input, output, session) {
       ) +
       guides(color = "none") +
       coord_cartesian(xlim=ranges2$x, ylim = ranges2$y, expand = FALSE) +
-      scale_size_area()
+      scale_size_area() +
+      xlab("Latitude") +
+      ylab("Longitude") +
+      labs(title = "Reactive Graph of New Covid Cases per Million in World", size="New Cases per Million")
     
   })
   
@@ -214,8 +216,17 @@ server <- function(input, output, session) {
     day <- input$DatesMerge
     #day_formatted <- str_glue("{month(day)}/{day(day)}/{year(day)}")
     covid_on_day_click <- filter(covid_data_by_country, date==day)
-    covid_on_day_click <- select(covid_on_day_click, c(2, 4, 5, 8, 9, 12, 14, 15))
-    nearPoints(covid_on_day_click, input$plot_react_click, maxpoints = 1, addDist = FALSE)
+    country_click <- nearPoints(covid_on_day_click, input$plot_react_click, maxpoints = 1, addDist = FALSE)$location
+    #covid_on_day_click <- select(covid_on_day_click, c(2, 5, 8, 9, 12, 14, 15))
+    covid_on_day_click <- filter(covid_on_day_click, location == country_click)
+    #covid_on_day_click <- rename(covid_on_day_click, 'new_cases' = 'New Cases')
+    covid_on_day_click <- select(covid_on_day_click, c(1, 5, 8, 9, 12))
+    names(covid_on_day_click)[4] <- "New Deaths"
+    names(covid_on_day_click)[5] <- "New Cases per Million"
+    names(covid_on_day_click)[3] <- "Total Deaths"
+    names(covid_on_day_click)[2] <- "Total Cases"
+    names(covid_on_day_click)[1] <- "Location"
+    covid_on_day_click
   })
   
   output$plot_country_cases <- renderPlot({
@@ -223,10 +234,15 @@ server <- function(input, output, session) {
     nearCountry <- nearPoints(covid_data_by_country, input$plot_react_click, maxpoints = 1, addDist = FALSE)
     iso_react <- as.character(nearCountry$iso_code)
     
+    #visualizing the selected measure
+    cat <- input$categ
+    
     #adding lines for dates of lockdown
     govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
     
-    govt_data_lockdown <- filter(govt_data, CATEGORY=="Lockdown" & iso_code==iso_react)
+    govt_data_lockdown <- filter(govt_data, CATEGORY==cat & iso_code==iso_react)
+    
+    govt_data_end_lockdown <- filter(govt_data_phaseout, CATEGORY==cat & iso_code==iso_react)
     
     govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
     
@@ -244,9 +260,20 @@ server <- function(input, output, session) {
       g <- g + geom_vline(xintercept=as.Date(list_dates[[i]]), col = 'black')
     }
     
+    list_dates_end <- list()
+    
+    for (obs in 1:nrow(govt_data_end_lockdown)){
+      list_dates_end <- append(list_dates_end, as.character(govt_data_end_lockdown[obs,19]))
+    }
+    
+    for (i in 1:length(list_dates_end)){
+      g <- g + geom_vline(xintercept=as.Date(list_dates_end[[i]]), col = 'blue')
+    }
+    
     g <- g + 
       xlab("Date") +
-      ylab("Total Deaths")
+      ylab("Total Cases") +
+      scale_y_continuous(labels = comma_format(scale=1))
     
     g
     
@@ -257,12 +284,15 @@ server <- function(input, output, session) {
     nearCountry <- nearPoints(covid_data_by_country, input$plot_react_click, maxpoints = 1, addDist = FALSE)
     iso_react <- as.character(nearCountry$iso_code)
     
+    #visualizing the selected measure
+    cat <- input$categ
+    
     #adding lines for dates of lockdown
     govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
     
-    govt_data_lockdown <- filter(govt_data, CATEGORY=="Lockdown" & iso_code==iso_react)
+    govt_data_lockdown <- filter(govt_data, CATEGORY==cat & iso_code==iso_react)
     
-    govt_data_end_lockdown <- filter(govt_data_phaseout, CATEGORY=="Lockdown" & iso_code==iso_react)
+    govt_data_end_lockdown <- filter(govt_data_phaseout, CATEGORY==cat & iso_code==iso_react)
     
     govt_data_2 <- filter(covid_data_by_country, iso_code==iso_react)
     
@@ -292,7 +322,8 @@ server <- function(input, output, session) {
     
     g <- g + 
       xlab("Date") +
-      ylab("Total Deaths")
+      ylab("Total Deaths") +
+      scale_y_continuous(labels = comma_format(scale=1))
     
     g
     
@@ -320,7 +351,9 @@ server <- function(input, output, session) {
     
     g <- ggplot(data=covid_on_day, aes(location, new_cases_per_million))
     g +
-      geom_bar(stat="identity")
+      geom_bar(stat="identity") +
+      ylab("New Cases per Million") +
+      xlab("Continent")
     
   })
   

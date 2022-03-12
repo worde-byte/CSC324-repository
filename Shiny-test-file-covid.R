@@ -23,6 +23,14 @@ covid_data_by_country <- covid_data
 
 covid_data_by_country <- select(covid_data_by_country, iso_code:new_cases_per_million)
 
+scatter <- select(Data, continent, new_cases_per_million, new_deaths_per_million, people_fully_vaccinated_per_hundred)
+
+scatter <- filter(scatter, continent!="")
+
+pairs(scatter[,2:4], pch = 19, 
+      col = ifelse(scatter$continent == "South America", "blue", "red"),
+      lower.panel = NULL)
+
 by_country <- covid_data_by_country %>%
   group_by(location, continent) %>%
   nest()
@@ -207,6 +215,9 @@ g <-
 
 #begin vlines 
   
+
+
+list_measures <- unique(govt_data$MEASURE)
 
 list_dates <- list()
 
