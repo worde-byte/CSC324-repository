@@ -28,7 +28,9 @@ scatter <- select(Data, continent, new_cases_per_million, new_deaths_per_million
 scatter <- filter(scatter, continent!="")
 
 pairs(scatter[,2:4], pch = 19, 
-      col = ifelse(scatter$continent == "South America", "blue", "red"),
+      col = ifelse(scatter$continent == "South America", "blue", 
+                   ifelse(scatter$continent == "North America", "red",
+                          ifelse(scatter$continent == "Africa", "orange", "green"))),
       lower.panel = NULL)
 
 by_country <- covid_data_by_country %>%
