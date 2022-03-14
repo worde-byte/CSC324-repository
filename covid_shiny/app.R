@@ -1,12 +1,6 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
+#Authors: Eamon Worden
+#Assignment: Individual Project
+#Due date: 3/14/2022
 #Online Sources:
 #https://www.r-graph-gallery.com/279-plotting-time-series-with-ggplot2.html
 #https://campus.datacamp.com/courses/free-introduction-to-r/chapter-6-lists?ex=6
@@ -18,6 +12,18 @@
 #https://statisticsglobe.com/change-formatting-of-numbers-of-ggplot2-plot-axis-in-r
 #https://www.datanovia.com/en/lessons/rename-data-frame-columns-in-r/
 #https://bookdown.org/dli/rguide/scatterplots-and-best-fit-lines-two-sets.html
+#Help obtained: Prof Jimenez
+#I confirm that the above list of sources is complete AND that I/we have not talked to anyone else about the solution to this problem
+
+
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+# Find out more about building applications with Shiny here:
+#
+#    http://shiny.rstudio.com/
+#
 
 
 library(shiny)
