@@ -110,7 +110,7 @@ catego <- unique(govt_data$MEASURE)
 
 ui <- fluidPage(
   theme = shinytheme("united"),
-  titlePanel("Covid cases in Shiny using ggplot2"),
+  titlePanel("Visualizing Covid with Shiny"),
   #slider for date to display on world map
   sidebarLayout(
     sidebarPanel(
